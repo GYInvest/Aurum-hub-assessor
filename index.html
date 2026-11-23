@@ -436,6 +436,7 @@ html[data-theme=hibrido] .side{--ink:255,244,220;--surf:23,21,18;--field:30,27,2
 @media(max-width:700px){.btn{white-space:normal;height:auto;min-height:46px;padding-top:8px;padding-bottom:8px;text-align:left}.btn.sm{min-height:36px}.btn.xs{min-height:30px}
   .lst.w{flex-wrap:wrap}.lst.w>input{flex:1 1 calc(100% - 30px)!important}.lst.w>select{flex:1;max-width:none!important}.theme-opt{grid-template-columns:1fr}.h1{font-size:32px}}
 .es-t th,.es-t td{padding:8px 6px!important}.es-t td:first-child{font-size:13.5px}
+.tradingview-widget-container iframe{width:100%!important;min-height:520px}
 </style></head><body>
 <div class="bg-grad"></div>
 <div class="app" id="app">
@@ -664,19 +665,27 @@ function explain(title,items){ return '<details class="expl"><summary>'+ic('star
 /* =====================================================================
    Dados de mercado (Yahoo Finance via proxy CORS, RSS, Banco Central)
    ===================================================================== */
-var PROXIES=[
-  function(u){ return 'https://corsproxy.io/?url='+encodeURIComponent(u); },
-  function(u){ return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u); },
-  function(u){ return 'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u); }
-];
-var PX_OK=0; // último proxy que funcionou
+var MY_PROXY=''; // endereço do proxy próprio (ex.: https://gy.exemplo.workers.dev/?url=). Vazio = só os públicos.
+function pxList(){ var l=[], mine=String((S.prefs&&S.prefs.proxy)||MY_PROXY||'').trim();
+  if(mine) l.push({n:'Proxy próprio', f:function(u){ return mine+encodeURIComponent(u); }});
+  return l.concat([
+   {n:'allorigins', f:function(u){ return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u); }},
+   {n:'allorigins (json)', j:1, f:function(u){ return 'https://api.allorigins.win/get?url='+encodeURIComponent(u); }},
+   {n:'codetabs', f:function(u){ return 'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(u); }},
+   {n:'corsproxy.io', f:function(u){ return 'https://corsproxy.io/?url='+encodeURIComponent(u); }},
+   {n:'thingproxy', f:function(u){ return 'https://thingproxy.freeboard.io/fetch/'+u; }},
+   {n:'cors.eu.org', f:function(u){ return 'https://cors.eu.org/'+u; }}]); }
+var PX_GOOD=null; try{ PX_GOOD=sessionStorage.getItem('gyPx'); }catch(e){}
 function tfetch(url, ms){ var c=new AbortController(), t=setTimeout(function(){ c.abort(); }, ms||9000);
   return fetch(url,{signal:c.signal, cache:'no-store'}).then(function(r){ clearTimeout(t); if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); }, function(e){ clearTimeout(t); throw e; }); }
+function pxFetch(p,url,ms){ return tfetch(p.f(url),ms).then(function(t){ if(p.j){ t=(JSON.parse(t)||{}).contents||''; } return t; }); }
+/* tenta primeiro o proxy que funcionou por último; se falhar, dispara os demais ao mesmo tempo e fica com o primeiro que responder certo */
 async function viaProxy(url, ok, direct){
   if(direct){ try{ var d=await tfetch(url,7000); if(!ok||ok(d)) return d; }catch(e){} }
-  for(var i=0;i<PROXIES.length;i++){ var k=(PX_OK+i)%PROXIES.length;
-    try{ var t=await tfetch(PROXIES[k](url)); if(!ok||ok(t)){ PX_OK=k; return t; } }catch(e){} }
-  return null;
+  var L=pxList(), first=L.filter(function(p){ return p.n===PX_GOOD; })[0]||(L[0].n==='Proxy próprio'?L[0]:null);
+  if(first){ try{ var t=await pxFetch(first,url,6000); if(!ok||ok(t)) return t; }catch(e){} L=L.filter(function(p){ return p!==first; }); }
+  return new Promise(function(res){ var left=L.length, done=false; if(!left) return res(null);
+    L.forEach(function(p){ pxFetch(p,url,10000).then(function(t){ if(done) return; if(!ok||ok(t)){ done=true; PX_GOOD=p.n; try{ sessionStorage.setItem('gyPx',p.n); }catch(e){} res(t); } else if(--left===0) res(null); }, function(){ if(!done && --left===0) res(null); }); }); });
 }
 /* ---------- Yahoo ---------- */
 function ySym(tk){ tk=String(tk||'').trim().toUpperCase(); if(/^[A-Z]{4}\d{1,2}$/.test(tk)) return tk+'.SA'; if(/ US$/.test(tk)) return tk.replace(/ US$/,''); return tk; }
@@ -694,7 +703,9 @@ async function yChart(sym, range, interval){
 }
 /* última cotação + variação do dia (pelo gráfico diário de 5 dias) */
 async function yQuote(sym){
-  var d=await yChart(sym,'5d','1d'); if(!d||!d.c.length) return null;
+  var d=await yChart(sym,'5d','1d');
+  if((!d||!d.c.length) && sym==='BRL=X'){ try{ var o=JSON.parse(await tfetch('https://economia.awesomeapi.com.br/json/last/USD-BRL',7000)).USDBRL; return {px:+o.bid, chg:+o.pctChange, t:(+o.timestamp)*1000, name:'Dólar'}; }catch(e){ return null; } }
+  if(!d||!d.c.length) return null;
   var n=d.c.length, last=d.c[n-1], prev=n>1?d.c[n-2]:d.meta.prev;
   return {px:last, chg:prev?(last/prev-1)*100:null, t:d.t[n-1], name:d.meta.name};
 }
@@ -709,10 +720,15 @@ var FEEDS=[
   {n:'WSJ Markets', u:'https://feeds.content.dowjones.io/public/rss/RSSMarketsMain', c:'#c9c4dc'}
 ];
 function stripHtml(s){ var d=document.createElement('div'); d.innerHTML=String(s||''); return (d.textContent||'').replace(/\s+/g,' ').trim(); }
+/* segunda via para notícias: serviço público que converte RSS em JSON (até 10 itens por fonte) */
+async function rss2json(f){ try{ var j=JSON.parse(await tfetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(f.u),9000)); if(j.status!=='ok') return [];
+    return (j.items||[]).map(function(it){ var title=stripHtml(it.title), src=f.n, m; if(f.gn){ m=title.match(/^(.*) - ([^-]{2,40})$/); if(m){ title=m[1]; src=m[2]; } else src='Google Notícias'; }
+      return {src:src, c:f.gn?'#a87a1c':f.c, br:f.gn?true:!!f.br, t:title, l:it.link, d:f.gn?'':stripHtml(it.description).slice(0,260), img:f.gn?'':(it.thumbnail||(it.enclosure&&it.enclosure.link)||''), dt:Date.parse(String(it.pubDate||'').replace(' ','T')+'Z')||Date.now()}; }).filter(function(n){ return n.t; });
+  }catch(e){ return []; } }
 async function rss(f){
   var key='rss.'+f.n, c=cache(key,undefined,f.gn?45:10); if(c) return c;
   var t=await viaProxy(f.u, function(x){ return /<(item|entry)[\s>]/.test(x); });
-  if(!t){ var old=cacheAny(key); return old?old.v:[]; }
+  if(!t){ var alt=await rss2json(f); if(alt.length){ cache(key,alt); return alt; } var old=cacheAny(key); return old?old.v:[]; }
   var out=[];
   try{
     var doc=new DOMParser().parseFromString(t,'text/xml');
@@ -948,9 +964,10 @@ function renderWL(){
 var TV_MAP={'^BVSP':'BMFBOVESPA:IBOV','^GSPC':'FOREXCOM:SPXUSD','^NDX':'FOREXCOM:NSXUSD','^IXIC':'FOREXCOM:NSXUSD','BRL=X':'FX_IDC:USDBRL','BTC-USD':'BITSTAMP:BTCUSD','ETH-USD':'BITSTAMP:ETHUSD','BZ=F':'TVC:UKOIL','CL=F':'TVC:USOIL','GC=F':'TVC:GOLD','EURBRL=X':'FX_IDC:EURBRL'};
 function tvSym(s){ if(TV_MAP[s]) return TV_MAP[s]; if(/\.SA$/.test(s)) return 'BMFBOVESPA:'+s.replace(/\.SA$/,''); var m=s.match(/^([A-Z]+)-USD$/); if(m) return 'BINANCE:'+m[1]+'USDT'; return s.replace(/^\^/,''); }
 function tvMount(el, sym){
-  el.innerHTML='<div class="tradingview-widget-container" style="height:600px;width:100%"><div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div><div class="tradingview-widget-copyright" style="font-size:12px;padding-top:8px;color:var(--mut)"><a href="https://br.tradingview.com/" rel="noopener nofollow" target="_blank">Gráfico por TradingView</a></div></div>';
+  var h=Math.max(520,Math.min(760,Math.round(innerHeight*.68)));
+  el.innerHTML='<div class="tradingview-widget-container" style="width:100%"><div class="tradingview-widget-container__widget" style="width:100%;height:'+h+'px"></div><div class="tradingview-widget-copyright" style="font-size:12px;padding-top:8px;color:var(--mut)"><a href="https://br.tradingview.com/" rel="noopener nofollow" target="_blank">Gráfico por TradingView</a></div></div>';
   var sc=document.createElement('script'); sc.type='text/javascript'; sc.async=true; sc.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-  sc.text=JSON.stringify({autosize:true,symbol:tvSym(sym),interval:'D',timezone:'America/Sao_Paulo',theme:isDark()?'dark':'light',style:'1',locale:'br',allow_symbol_change:true,hide_side_toolbar:false,withdateranges:true,save_image:true,calendar:false,support_host:'https://www.tradingview.com'});
+  sc.text=JSON.stringify({width:'100%',height:h,symbol:tvSym(sym),interval:'D',timezone:'America/Sao_Paulo',theme:isDark()?'dark':'light',style:'1',locale:'br',allow_symbol_change:true,hide_side_toolbar:false,withdateranges:true,save_image:true,calendar:false,support_host:'https://www.tradingview.com'});
   sc.onerror=function(){ el.innerHTML='<div class="empty" style="height:300px;display:grid;place-items:center">Não consegui carregar o gráfico do TradingView agora. Use o modo Simples acima.</div>'; };
   el.firstChild.appendChild(sc);
 }
@@ -1494,6 +1511,8 @@ function pfRender(){
    +'<div class="row" style="margin-top:12px"><button class="btn" id="pfDemo">Carregar um exemplo fictício</button><button class="btn" id="pfPin">'+(p.pin?'Trocar ou remover PIN':'Definir PIN de bloqueio')+'</button></div>'
    +'<div class="hr"></div><button class="btn" id="pfClr" style="border-color:var(--rd);color:var(--rd)">'+ic('trash',18)+'Apagar todos os meus dados</button>'
    +'<p class="disc">Resumo: '+CT.items.length+' ativo(s) na carteira · '+OB.objs.length+' objetivo(s) · '+gResumo().n+' mês(es) de gastos em '+GA.ano+'.</p></div>'
+   +'<div class="card dk" style="margin-top:18px"><div class="h3">Conexão com os dados de mercado</div><p class="sub" style="margin-top:4px">Cotações e notícias chegam por serviços públicos de retransmissão. Se nada carregar, rode o teste para ver qual está respondendo.</p><div class="row" style="margin-top:12px"><button class="btn sm" id="pfTest">'+ic('refresh',16)+'Testar conexões</button></div><div id="pfTestR" style="margin-top:10px"></div>'
+   +'<div style="margin-top:14px">'+fld('Endereço do proxy próprio (opcional)','<input class="in" id="pfPx" value="'+esc(p.proxy||'')+'" placeholder="https://…workers.dev/?url=">','Avançado. Deixe vazio para usar só os serviços públicos.')+'</div></div>'
    +'<div class="note">O GY Invest é uma ferramenta de organização e educação financeira. Ele não recomenda produtos, não executa operações e não tem vínculo com corretoras ou bancos. As decisões são sempre suas.</div></div></div>';
   $$('[data-tema]').forEach(function(b){ b.onclick=function(){ p.tema=b.dataset.tema; save(); applyTheme(); pfRender(); }; });
   var sv=function(){ p.nome=$('#pfNome').value.trim(); p.ini=$('#pfIni').value.trim().toUpperCase(); var c=num($('#pfCdi').value), i=num($('#pfIpca').value); if(isFinite(c)&&c>0) p.cdi=c; if(isFinite(i)) p.ipca=i; save(); applyProfile(); toast('Salvo.'); };
@@ -1501,6 +1520,14 @@ function pfRender(){
   $('#pfBcb').onclick=async function(){ $('#pfBcbM').innerHTML='<span class="spin"></span>'; var s=await bcb(432,1), ip=await bcb(13522,1), msg=[];
     if(s&&s[0]){ var v=num(s[0].valor); if(isFinite(v)){ $('#pfCdi').value=fmt(v-0.1); msg.push('Selic meta '+fmt(v)+'% (CDI ≈ Selic − 0,10)'); } } if(ip&&ip[0]){ $('#pfIpca').value=fmt(num(ip[0].valor)); msg.push('IPCA 12 meses '+ip[0].valor+'% ('+ip[0].data+')'); }
     if(msg.length){ sv(); $('#pfBcbM').textContent=msg.join(' · '); } else $('#pfBcbM').textContent='Não consegui buscar agora.'; };
+  $('#pfPx').onchange=function(){ p.proxy=this.value.trim(); PX_GOOD=null; save(); toast('Salvo. Recarregue a página para usar.'); };
+  $('#pfTest').onclick=async function(){ var box=$('#pfTestR'), yu='https://query1.finance.yahoo.com/v8/finance/chart/%5EBVSP?range=5d&interval=1d', gu='https://news.google.com/rss/search?q=Ibovespa+when:5d&hl=pt-BR&gl=BR&ceid=BR:pt-419';
+    var tests=[]; pxList().forEach(function(px){ tests.push([px.n+' · cotações',function(){ return pxFetch(px,yu,10000).then(function(t){ if(t.indexOf('"timestamp"')<0) throw 0; }); }]); tests.push([px.n+' · notícias',function(){ return pxFetch(px,gu,10000).then(function(t){ if(!/<item[\s>]/.test(t)) throw 0; }); }]); });
+    tests.push(['rss2json · notícias (reserva)',function(){ return tfetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(gu),10000).then(function(t){ if(JSON.parse(t).status!=='ok') throw 0; }); }]);
+    tests.push(['AwesomeAPI · dólar (reserva)',function(){ return tfetch('https://economia.awesomeapi.com.br/json/last/USD-BRL',8000).then(function(t){ if(!JSON.parse(t).USDBRL) throw 0; }); }]);
+    tests.push(['Banco Central · Selic',function(){ return tfetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json',8000).then(function(t){ if(t.trim()[0]!=='[') throw 0; }); }]);
+    box.innerHTML=tests.map(function(t,i){ return '<div class="lst" style="padding:7px 0"><span style="flex:1">'+esc(t[0])+'</span><b id="pfT'+i+'"><span class="spin"></span></b></div>'; }).join('');
+    tests.forEach(function(t,i){ var t0=Date.now(); t[1]().then(function(){ $('#pfT'+i).innerHTML='<span class="up">funciona · '+((Date.now()-t0)/1000).toFixed(1)+'s</span>'; },function(){ var e=$('#pfT'+i); if(e) e.innerHTML='<span class="dn">falhou</span>'; }); }); };
   $('#pfExp').onclick=function(){ saveFile('gyinvest_backup_'+iso(new Date())+'.json', new Blob([JSON.stringify(S,null,1)],{type:'application/json'})); };
   $('#pfImp').onchange=function(){ var f=this.files[0]; if(!f) return; f.text().then(function(tx){ try{ var d=JSON.parse(tx); if(!d||!d.prefs) throw 0; localStorage.setItem(KEY,JSON.stringify(d)); toast('Backup restaurado.'); setTimeout(function(){ location.reload(); },600); }catch(e){ toast('Arquivo de backup inválido.'); } }); };
   $('#pfDemo').onclick=function(){ if((CT.items.length||OB.objs.length) && !confirm('Isso substitui a carteira, os objetivos e os gastos atuais por um exemplo fictício. Continuar?')) return; demoData(); save(); toast('Exemplo carregado (dados fictícios).'); pfRender(); };
