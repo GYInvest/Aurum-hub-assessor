@@ -437,6 +437,9 @@ html[data-theme=hibrido] .side{--ink:255,244,220;--surf:23,21,18;--field:30,27,2
   .lst.w{flex-wrap:wrap}.lst.w>input{flex:1 1 calc(100% - 30px)!important}.lst.w>select{flex:1;max-width:none!important}.theme-opt{grid-template-columns:1fr}.h1{font-size:32px}}
 .es-t th,.es-t td{padding:8px 6px!important}.es-t td:first-child{font-size:13.5px}
 .tradingview-widget-container iframe{width:100%!important;min-height:520px}
+.res>div{background:rgba(var(--field),.9)}
+.res .hi{background:linear-gradient(rgba(184,137,43,.13),rgba(184,137,43,.13)),rgb(var(--field))}
+.tbl td.money,.tbl td.r{white-space:nowrap}
 </style></head><body>
 <div class="bg-grad"></div>
 <div class="app" id="app">
@@ -446,7 +449,7 @@ html[data-theme=hibrido] .side{--ink:255,244,220;--surf:23,21,18;--field:30,27,2
     <nav class="side-nav" id="nav"></nav>
     <div class="side-foot">
       <button class="nav-it" id="lockBtn"><i data-ic="lock"></i><span>Sair e bloquear</span></button>
-      <div class="side-mini"><span style="flex:1">Organização financeira</span><span class="kbd">V2</span></div>
+      <div class="side-mini"><span style="flex:1">Versão de 23/11 17:09</span><span class="kbd">V3</span></div>
     </div>
   </aside>
   <div class="scrim" id="scrim"></div>
@@ -460,6 +463,7 @@ html[data-theme=hibrido] .side{--ink:255,244,220;--surf:23,21,18;--field:30,27,2
       <button class="avatar" id="avatar" data-go="prefs" title="Personalização">GY</button>
     </header>
 
+    <section class="page" data-p="resumo"><div id="pg_resumo"></div></section>
     <section class="page" data-p="home">
       <div class="page-head" style="align-items:flex-end">
         <div><div class="kick">Radar de mercado</div><div class="h2" style="margin-top:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">Notícias de mercado dos últimos <span class="seg" id="newsPer" style="font-size:15px;letter-spacing:0;font-weight:500"></span> dias</div></div>
@@ -500,6 +504,9 @@ html[data-theme=hibrido] .side{--ink:255,244,220;--surf:23,21,18;--field:30,27,2
     <section class="page" data-p="emprestimo"><div id="pg_emprestimo"></div></section>
     <section class="page" data-p="gastos"><div id="pg_gastos"></div></section>
     <section class="page" data-p="patrimonio"><div id="pg_patrimonio"></div></section>
+    <section class="page" data-p="imovel"><div id="pg_imovel"></div></section>
+    <section class="page" data-p="aposentadoria"><div id="pg_aposentadoria"></div></section>
+    <section class="page" data-p="dividas"><div id="pg_dividas"></div></section>
     <section class="page" data-p="projecoes"><div id="pg_projecoes"></div></section>
     <section class="page" data-p="prefs"><div id="pg_prefs"></div></section>
 
@@ -583,20 +590,20 @@ function paintIcons(root){ $$('i[data-ic]',root).forEach(function(el){ el.outerH
 
 /* ---------- navegação ---------- */
 var NAV=[
- {sec:null, it:[['home','grid','Visão geral'],['graficos','chart','Gráficos']]},
+ {sec:null, it:[['resumo','star','Meu resumo'],['home','tv','Notícias'],['graficos','chart','Gráficos']]},
  {sec:'Minha aba', it:[['carteira','pie','Minha carteira atual'],['objetivo','target','Objetivo para alcançar'],['projecao','trend','Projeção com objetivo']]},
- {sec:'Meus objetivos', it:[['credito','home','Financiamento ou consórcio'],['sucessao','shield','Sucessão patrimonial'],['cartao','card','Cartão de crédito ou débito'],['emprestimo','receipt','Empréstimos']]},
- {sec:'Financeiro', it:[['gastos','cal','Controle de gastos'],['patrimonio','key','Patrimônio']]},
+ {sec:'Meus objetivos', it:[['credito','home','Financiamento ou consórcio'],['imovel','key','Alugar ou comprar imóvel'],['aposentadoria','clock','Viver de renda'],['sucessao','shield','Sucessão patrimonial'],['cartao','card','Cartão de crédito ou débito'],['emprestimo','receipt','Empréstimos']]},
+ {sec:'Financeiro', it:[['gastos','cal','Controle de gastos'],['patrimonio','grid','Patrimônio'],['dividas','check','Plano para sair das dívidas']]},
  {sec:'Ferramentas', it:[['projecoes','swap','Comparador'],['prefs','sliders','Personalização']]}
 ];
-var TITLES={home:'Visão geral',graficos:'Gráficos',carteira:'Minha carteira atual',objetivo:'Objetivo para alcançar',projecao:'Projeção com objetivo',credito:'Financiamento ou consórcio',sucessao:'Sucessão patrimonial',cartao:'Cartão de crédito ou débito',emprestimo:'Empréstimos',gastos:'Controle de gastos',patrimonio:'Patrimônio',projecoes:'Comparador',prefs:'Personalização'};
+var TITLES={resumo:'Meu resumo',home:'Notícias',graficos:'Gráficos',carteira:'Minha carteira atual',objetivo:'Objetivo para alcançar',projecao:'Projeção com objetivo',credito:'Financiamento ou consórcio',imovel:'Alugar ou comprar imóvel',aposentadoria:'Viver de renda',sucessao:'Sucessão patrimonial',cartao:'Cartão de crédito ou débito',emprestimo:'Empréstimos',gastos:'Controle de gastos',patrimonio:'Patrimônio',dividas:'Plano para sair das dívidas',projecoes:'Comparador',prefs:'Personalização'};
 var PAGES={}; // nome -> {init, render}
 var CUR=null;
 function buildNav(){
   $('#nav').innerHTML=NAV.map(function(g){ return (g.sec?'<div class="nav-sec">'+g.sec+'</div>':'')+g.it.map(function(x){ return '<button class="nav-it" data-go="'+x[0]+'" title="'+x[2]+'">'+ic(x[1])+'<span>'+x[2]+'</span></button>'; }).join(''); }).join('');
 }
 function go(p, noHash){
-  if(!TITLES[p]) p='home';
+  if(!TITLES[p]) p='resumo';
   CUR=p;
   $$('.page').forEach(function(s){ s.classList.toggle('on', s.dataset.p===p); });
   $$('.nav-it').forEach(function(b){ b.classList.toggle('on', b.dataset.go===p); });
@@ -1047,6 +1054,7 @@ function ctRender(){
         +its.map(function(i){ return '<div class="lst" style="cursor:pointer" data-ed="'+i.id+'"><span style="flex:1;min-width:0"><b style="font-weight:600">'+esc(i.n)+(i.tk?' <span class="pill p-mu">'+esc(i.tk)+'</span>':'')+'</b><span class="sub" style="display:block">'+rateLbl(i)+'</span></span><span style="text-align:right"><b class="money">'+brl(+i.v||0)+'</b><span class="sub" style="display:block">'+pct((+i.v||0)/tot*100,1)+'</span></span><span class="x" style="border:none">'+ic('edit',15)+'</span></div>'; }).join('')+'</div>'; }).join('')+'</div>'
     +'<div><div class="card dk"><div class="lbl">Como sua carteira está dividida</div>'+CL.filter(function(c){ return a[c[0]]>0; }).map(function(c){ var p=a[c[0]]/tot*100; return '<div class="bar-c"><div class="row"><span style="color:'+c[2]+';font-weight:600">'+c[1]+'</span><span>'+pct(p,1)+'</span></div><div class="tr"><div class="fl" style="width:'+p+'%;background:'+c[2]+'"></div></div></div>'; }).join('')
       +'<p class="sub" style="margin-top:10px">Divisão por tipo de investimento, calculada sobre os valores que você informou. O site não avalia se essa divisão é boa ou ruim: isso depende do seu objetivo e do seu perfil.</p></div>'
+      +cardReserva()+cardVenc()+cardFgc()
       +'<div class="card dk" style="margin-top:16px"><div class="h3">Próximos passos</div><div class="row" style="margin-top:12px"><button class="btn sm" data-go="objetivo">'+ic('target',16)+'Definir objetivo</button><button class="btn sm" data-go="projecao">'+ic('trend',16)+'Ver projeção</button><button class="btn sm" id="ctNews">'+ic('grid',16)+'Notícias dos meus ativos</button></div></div></div></div>'
     +'<p class="disc">Rentabilidade estimada com as taxas que você informou e as premissas de CDI ('+pct(S.prefs.cdi)+') e IPCA ('+pct(S.prefs.ipca)+') em Personalização, já descontando 15% de IR nos ativos tributados. É uma estimativa para organização pessoal, não uma garantia nem uma recomendação.</p>';
   $('#pg_carteira').innerHTML=h; ctBind();
@@ -1059,11 +1067,16 @@ function ctForm(it){
   var m=modal(n?'Adicionar ativo':'Editar ativo','<div class="grid g2">'+fld('Nome do investimento','<input class="in" id="afN" value="'+esc(it.n)+'" placeholder="Ex.: CDB Banco X, Tesouro IPCA+ 2035, Petrobras">')+fld('Código (opcional)','<input class="in" id="afT" value="'+esc(it.tk||'')+'" placeholder="Ex.: PETR4, BOVA11, MXRF11" style="text-transform:uppercase">','Para ações, FIIs e ETFs. Usado para buscar notícias.')
     +fld('Tipo','<select class="sel" id="afC">'+CL.map(function(c){ return '<option value="'+c[0]+'"'+(c[0]===it.cl?' selected':'')+'>'+c[1]+'</option>'; }).join('')+'</select>')+fld('Valor atual',inp('afV',it.v!==''?fmt(+it.v,0):'','R$'))+'</div>'
     +'<div class="lbl" style="margin-top:20px">Rentabilidade (opcional)</div><div class="grid g2" style="margin-top:10px">'+fld('Como rende','<select class="sel" id="afI"><option value="">Não sei / não quero informar</option>'+Object.keys(IDXL).map(function(k){ return '<option value="'+k+'"'+(it.idx===k?' selected':'')+'>'+IDXL[k]+'</option>'; }).join('')+'</select>')+fld('Taxa',inp('afX',it.tx!==''&&it.tx!=null?fmt(+it.tx,2):'','','%'))+'</div>'
+    +'<div class="lbl" style="margin-top:20px">Detalhes (opcional)</div><div class="grid g2" style="margin-top:10px">'+fld('Banco ou instituição emissora','<input class="in" id="afB" value="'+esc(it.inst||'')+'" placeholder="Ex.: Banco X">')+fld('Data de vencimento','<input class="in" id="afD" type="date" value="'+esc(it.venc||'')+'">')+'</div>'
+    +'<button class="row" id="afLq" style="gap:12px;margin-top:14px"><span class="tog'+(it.liq?' on':'')+'"></span><span>Posso resgatar a qualquer momento (conta como reserva de emergência)</span></button>'
+    +'<button class="row" id="afFg" style="gap:12px;margin-top:10px"><span class="tog'+(it.fgc?' on':'')+'"></span><span>Coberto pelo FGC (CDB, LCI, LCA, LC, RDB, poupança)</span></button>'
     +'<button class="row" id="afIs" style="gap:12px;margin-top:14px"><span class="tog'+(it.isento?' on':'')+'"></span><span>Isento de imposto de renda (LCI, LCA, CRI, CRA, debênture incentivada, poupança)</span></button>'
     +'<div class="row" style="margin-top:22px;justify-content:flex-end">'+(n?'':'<button class="btn ghost" id="afDel" style="color:var(--rd);margin-right:auto">'+ic('trash',16)+'Excluir</button>')+'<button class="btn" onclick="closeModal()">Cancelar</button><button class="btn or" id="afOk">Salvar</button></div>');
   var is=!!it.isento; $('#afIs').onclick=function(){ is=!is; $('.tog',this).classList.toggle('on',is); };
+  var lq=!!it.liq, fg=!!it.fgc; $('#afLq').onclick=function(){ lq=!lq; $('.tog',this).classList.toggle('on',lq); }; $('#afFg').onclick=function(){ fg=!fg; $('.tog',this).classList.toggle('on',fg); };
+  if(n) $('#afN').onchange=function(){ if(/(cdb|lci|lca|\blc\b|rdb|poupan)/i.test(this.value)&&!fg){ fg=true; $('#afFg .tog').classList.add('on'); } };
   $('#afOk').onclick=function(){ var nm=$('#afN').value.trim(), v=num($('#afV').value); if(!nm){ toast('Informe o nome.'); return; } if(!isFinite(v)||v<=0){ toast('Informe o valor atual.'); return; }
-    it.n=nm; it.tk=$('#afT').value.trim().toUpperCase(); it.cl=$('#afC').value; it.v=v; it.idx=$('#afI').value; var t=num($('#afX').value); it.tx=it.idx&&isFinite(t)?t:''; if(it.idx&&it.tx===''){ it.idx=''; } it.isento=is?1:0;
+    it.n=nm; it.tk=$('#afT').value.trim().toUpperCase(); it.cl=$('#afC').value; it.v=v; it.idx=$('#afI').value; var t=num($('#afX').value); it.tx=it.idx&&isFinite(t)?t:''; if(it.idx&&it.tx===''){ it.idx=''; } it.isento=is?1:0; it.liq=lq?1:0; it.fgc=fg?1:0; it.inst=$('#afB').value.trim(); it.venc=$('#afD').value;
     if(n){ it.id=uid(); CT.items.push(it); } save(); closeModal(); ctRender(); };
   if(!n) $('#afDel').onclick=function(){ CT.items=CT.items.filter(function(x){ return x.id!==it.id; }); S.cart.items=CT.items; save(); closeModal(); ctRender(); };
 }
@@ -1391,6 +1404,194 @@ function ptRender(){
   else $('#ptCh').innerHTML='<div class="empty">Registre o retrato de hoje e volte daqui a um tempo: com dois ou mais registros, o gráfico mostra a evolução.</div>';
 }
 
+/* ---- p_extra.js ---- */
+/* =====================================================================
+   Meu resumo · reserva · vencimentos e FGC · fechamento do mês
+   Plano de dívidas · alugar ou comprar · viver de renda
+   ===================================================================== */
+/* ---------- reserva de emergência ---------- */
+function custoMes(){ var r=gResumo(); return r.n?(r.mf+r.mv):null; }
+function reservaInfo(){ var v=CT.items.reduce(function(s,i){ return i.liq?s+(+i.v||0):s; },0), c=custoMes(); return {v:v, custo:c, meses:c>0?v/c:null}; }
+function cardReserva(){ var R=reservaInfo(), m=R.meses, col=m==null?'var(--mut)':m>=6?'var(--gr)':m>=3?'var(--yl)':'var(--rd)';
+  return '<div class="card dk" style="margin-top:16px"><div class="row" style="justify-content:space-between"><div class="h3">Reserva de emergência</div>'+(m!=null?'<span class="pill" style="background:rgba(var(--ink),.07);color:'+col+';height:28px;font-size:13px">'+fmt(m,1)+' meses</span>':'')+'</div>'
+    +'<div class="res"><div><div class="l">Disponível a qualquer momento</div><div class="v money">'+brl(R.v)+'</div></div><div><div class="l">Seu custo mensal</div><div class="v money">'+(R.custo?brl(R.custo):'—')+'</div></div></div>'
+    +(m!=null?'<div style="height:10px;border-radius:6px;background:rgba(var(--ink),.08);margin-top:14px;position:relative;overflow:hidden"><div style="height:100%;width:'+clamp(m/12*100,0,100)+'%;background:'+col+'"></div></div><div class="row sub" style="justify-content:space-between;margin-top:4px"><span>0</span><span>3 meses</span><span>6 meses</span><span>12 meses</span></div>':'')
+    +'<p class="sub" style="margin-top:10px;font-size:13.5px">'+(R.v===0?'Marque, em cada ativo, o que você pode resgatar a qualquer momento: é isso que conta como reserva. ':'')+(R.custo?'Sua reserva cobre <b>'+fmt(m,1)+' meses</b> do seu custo de vida. A referência mais usada é ter de 3 a 6 meses (ou mais, para quem tem renda variável).':'Preencha o <a data-go="gastos">Controle de gastos</a> para o site calcular quantos meses a sua reserva cobre.')+'</p></div>'; }
+/* ---------- vencimentos e concentração por instituição ---------- */
+var FGC_LIM=250000;
+function vencList(){ var t0=today(); return CT.items.filter(function(i){ return i.venc; }).map(function(i){ var d=fromIso(i.venc); return {i:i,d:d,dias:Math.round((d-t0)/864e5)}; }).sort(function(a,b){ return a.d-b.d; }); }
+function cardVenc(){ var L=vencList(); if(!L.length) return '';
+  return '<div class="card dk" style="margin-top:16px"><div class="h3">Vencimentos</div>'+L.slice(0,8).map(function(x){ var c=x.dias<0?'var(--mut)':x.dias<=90?'var(--yl)':'var(--tx2)'; return '<div class="lst"><span style="flex:1;min-width:0"><b style="font-weight:600">'+esc(x.i.n)+'</b><span class="sub" style="display:block">'+dBR(x.d,{day:'2-digit',month:'2-digit',year:'numeric'})+'</span></span><span style="text-align:right"><b class="money">'+brl(+x.i.v||0)+'</b><span class="sub" style="display:block;color:'+c+'">'+(x.dias<0?'venceu':x.dias===0?'vence hoje':x.dias<=60?'em '+x.dias+' dias':'em '+fmt(x.dias/30.4,0)+' meses')+'</span></span></div>'; }).join('')
+    +'<p class="sub" style="margin-top:8px">Quando um título vence, o dinheiro volta para a conta e para de render até você decidir o que fazer.</p></div>'; }
+function fgcList(){ var by={}; CT.items.forEach(function(i){ if(!i.fgc) return; var k=(i.inst||'').trim()||'Instituição não informada'; by[k]=(by[k]||0)+(+i.v||0); }); return Object.keys(by).map(function(k){ return {n:k,v:by[k]}; }).sort(function(a,b){ return b.v-a.v; }); }
+function cardFgc(){ var L=fgcList(); if(!L.length) return '';
+  return '<div class="card dk" style="margin-top:16px"><div class="h3">Cobertura do FGC por instituição</div>'+L.map(function(x){ var p=x.v/FGC_LIM*100, over=x.v>FGC_LIM; return '<div class="bar-c"><div class="row"><span style="font-weight:600">'+esc(x.n)+'</span><span class="money" style="color:'+(over?'var(--rd)':'inherit')+'">'+brl(x.v)+(over?' · '+brl(x.v-FGC_LIM)+' acima do limite':'')+'</span></div><div class="tr"><div class="fl" style="width:'+clamp(p,0,100)+'%;background:'+(over?'var(--rd)':'var(--gr)')+'"></div></div></div>'; }).join('')
+    +'<p class="sub" style="margin-top:8px">O FGC cobre até '+brl(FGC_LIM)+' por CPF em cada instituição (ou conglomerado), com teto global de R$ 1 milhão a cada 4 anos. Informe o banco emissor de cada título para o cálculo ficar certo.</p></div>'; }
+
+/* ---------- fechamento do mês ---------- */
+var FE=S.fech||(S.fech=[]);
+function ymNow(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2); }
+function ymLbl(ym){ var p=ym.split('-'); return MESES[+p[1]-1]+'/'+p[0].slice(2); }
+function fecharMes(){ var d=new Date(), y=d.getFullYear(), m=d.getMonth(), P=patrLiquido(), e=gTot('in',y,m), s=gTot('fx',y,m)+gTot('vr',y,m), ym=ymNow();
+  var snap={ym:ym,d:iso(d),e:e,s:s,sobra:e-s,pl:P.pl,inv:P.inv,div:P.div,objs:OB.objs.map(function(o){ return {n:o.n,p:o.valor?clamp(P.inv/o.valor*100,0,999):0}; })};
+  for(var i=FE.length-1;i>=0;i--) if(FE[i].ym===ym) FE.splice(i,1); FE.push(snap); FE.sort(function(a,b){ return a.ym<b.ym?-1:1; });
+  PT.hist=PT.hist.filter(function(h){ return h.d!==snap.d; }); PT.hist.push({d:snap.d,pl:P.pl,bens:P.bens,div:P.div}); save(); }
+
+/* ---------------- Meu resumo ---------------- */
+PAGES.resumo={ render:rsRender };
+function isEmptyUser(){ return !CT.items.length && !OB.objs.length && !gResumo().n && !PT.bens.length && !PT.div.length; }
+function proximos(){ var out=[], R=reservaInfo(), G=gResumo(), P=patrLiquido(), base=prBaseRate();
+  if(!G.n) out.push(['cal','Preencha o controle de gastos','Sem saber quanto entra e quanto sai, não dá para saber quanto você consegue guardar.','gastos']);
+  if(!CT.items.length) out.push(['pie','Registre o que você tem investido','É o ponto de partida da projeção e das notícias ligadas à sua carteira.','carteira']);
+  if(!OB.objs.length) out.push(['target','Defina um objetivo','Com um valor e um prazo, o site mostra se o seu ritmo atual chega lá.','objetivo']);
+  if(G.n && G.sobra<0) out.push(['cal','Seus gastos estão maiores que a renda','Na média, saem '+brl(-G.sobra)+' a mais do que entram por mês. Veja para onde o dinheiro está indo.','gastos']);
+  var caras=PT.div.filter(function(d){ return (+d.j||0)>=3 && (+d.v||0)>0; }); if(caras.length) out.push(['check','Você tem dívida com juros altos','Dívidas acima de 3% ao mês costumam custar mais do que qualquer investimento rende. Veja o plano de quitação.','dividas']);
+  else if(PT.div.length && PT.div.some(function(d){ return d.j==null||d.j===''; })) out.push(['check','Informe os juros das suas dívidas','Com a taxa de cada uma, o site monta a ordem de quitação.','dividas']);
+  if(CT.items.length && R.meses!=null && R.meses<3) out.push(['shield','Sua reserva cobre '+fmt(R.meses,1)+' mês(es)','A referência mais usada é de 3 a 6 meses do custo de vida, em aplicações que você resgata na hora.','carteira']);
+  var vs=vencList().filter(function(x){ return x.dias>=0&&x.dias<=60; }); if(vs.length) out.push(['clock',vs.length+' aplicação(ões) vencem em até 60 dias',vs.slice(0,2).map(function(x){ return x.i.n+' ('+dBR(x.d)+')'; }).join(', ')+'. Vale decidir antes o que fazer com o valor.','carteira']);
+  var fo=fgcList().filter(function(x){ return x.v>FGC_LIM; }); if(fo.length) out.push(['shield','Valor acima do limite do FGC em '+fo[0].n,'Há '+brl(fo[0].v-FGC_LIM)+' além dos '+brl(FGC_LIM)+' cobertos por instituição.','carteira']);
+  OB.objs.forEach(function(o){ var m=(+o.anos||1)*12, v=fvReal(P.inv,+OB.aporte||0,base,m); if(v<(+o.valor||0)) out.push(['trend','"'+o.n+'": no ritmo atual, faltam '+brlK(o.valor-v),'Veja na projeção as três formas de fechar essa conta.','projecao']); });
+  if(G.n && !FE.some(function(f){ return f.ym===ymNow(); })) out.push(['check','Feche o mês de '+MESES[new Date().getMonth()],'Registra gastos, patrimônio e progresso para você comparar com o mês anterior.','#fechar']);
+  return out; }
+function rsRender(){
+  var B=$('#pg_resumo'), nome=(S.prefs.nome||'').split(' ')[0];
+  if(isEmptyUser()){ B.innerHTML='<div class="kick">Bem-vindo ao GY Invest</div><div class="h1">Vamos começar pelo básico</div><p class="lead">Quatro respostas rápidas e o site já monta o seu resumo. Tudo pode ser ajustado depois, com calma.</p>'
+      +'<div class="card dk" style="margin-top:24px;max-width:860px"><div class="grid g2" style="gap:14px">'+fld('Como quer ser chamado','<input class="in" id="obN" placeholder="Seu nome" value="'+esc(S.prefs.nome||'')+'">')+fld('Quanto você recebe por mês (líquido)',inp('obR','','R$'))
+        +fld('Quanto você gasta por mês, mais ou menos',inp('obG','','R$'))+fld('Quanto você já tem investido',inp('obI','','R$'))+'</div>'
+      +'<div class="lbl" style="margin-top:20px">Um objetivo para começar (opcional)</div><div class="grid g3" style="gap:14px;margin-top:10px">'+fld('O que você quer','<input class="in" id="obO" placeholder="Ex.: entrada do apartamento">')+fld('Quanto custa hoje',inp('obV','','R$'))+fld('Em quanto tempo',inp('obA','','','anos'))+'</div>'
+      +'<div class="row" style="margin-top:22px"><button class="btn or" id="obGo">'+ic('check',18)+'Montar meu resumo</button><button class="btn ghost" id="obDemo">Ver com um exemplo fictício</button></div></div>'
+      +'<p class="disc" style="max-width:860px">Seus dados ficam salvos só neste navegador. O GY Invest organiza e faz contas: não recomenda produtos nem tem vínculo com bancos ou corretoras.</p>';
+    $('#obGo').onclick=function(){ var r=nv('obR'), g=nv('obG'), iv=nv('obI'), y=new Date().getFullYear(), m=new Date().getMonth(); S.prefs.nome=$('#obN').value.trim(); if(!r&&!g&&!iv){ toast('Preencha ao menos um valor.'); return; }
+      var row=function(n,gr){ var x=GA.rows.filter(function(q){ return q.n===n; })[0]; if(!x){ x={id:uid(),g:gr,n:n,v:{}}; var last=-1; GA.rows.forEach(function(q,i){ if(q.g===gr) last=i; }); GA.rows.splice(last+1,0,x); } return x; };
+      GA.ano=y; if(r) (row('Salário líquido','in').v[y]=row('Salário líquido','in').v[y]||[])[m]=r; if(g){ var o=row('Gastos do mês (estimativa)','vr'); (o.v[y]=o.v[y]||[])[m]=g; }
+      if(iv) CT.items.push({id:uid(),n:'Meus investimentos',tk:'',cl:'pos',v:iv,idx:'',tx:'',isento:0,liq:1});
+      var on=$('#obO').value.trim(), ov=nv('obV'), oa=nv('obA'); if(ov>0) OB.objs.push({id:uid(),n:on||'Meu objetivo',valor:ov,anos:clamp(Math.round(oa||5),1,60)});
+      OB.aporte=Math.max(0,Math.round(r-g)); save(); applyProfile(); rsRender(); toast('Resumo montado. Agora detalhe cada parte quando quiser.'); };
+    $('#obDemo').onclick=function(){ demoData(); save(); rsRender(); toast('Exemplo carregado (dados fictícios).'); };
+    return; }
+  var P=patrLiquido(), G=gResumo(), R=reservaInfo(), base=prBaseRate(), px=proximos(), last=FE[FE.length-1], prev=FE[FE.length-2], fechado=last&&last.ym===ymNow();
+  var dl=function(a,b,inv){ if(a==null||b==null) return ''; var d=a-b; if(Math.abs(d)<1) return '<div class="sub">igual ao fechamento anterior</div>'; var good=inv?d<0:d>0; return '<div class="sub" style="color:'+(good?'var(--gr)':'var(--rd)')+'">'+(d>0?'+':'−')+brl(Math.abs(d)).replace('-','')+' desde '+ymLbl(prev?prev.ym:last.ym)+'</div>'; };
+  var ref=fechado?prev:last;
+  B.innerHTML='<div class="page-head"><div><div class="kick">Meu resumo</div><div class="h1">'+(nome?'Olá, '+esc(nome):'Sua vida financeira')+'</div><p class="lead">O que você tem, quanto sobra e a que distância está dos seus objetivos.</p></div>'
+      +'<div class="row"><button class="btn'+(fechado?'':' or')+'" id="rsFech">'+ic('check',18)+(fechado?'Atualizar fechamento de '+MESES[new Date().getMonth()]:'Fechar o mês de '+MESES[new Date().getMonth()])+'</button></div></div>'
+    +'<div class="res" style="margin:0 0 22px"><div class="hi"><div class="l">Patrimônio líquido</div><div class="v money">'+brl(P.pl)+'</div>'+dl(P.pl,ref&&ref.pl)+'</div><div><div class="l">Investido</div><div class="v money">'+brl(P.inv)+'</div>'+dl(P.inv,ref&&ref.inv)+'</div>'
+      +'<div><div class="l">Dívidas</div><div class="v money"'+(P.div?' style="color:var(--rd)"':'')+'>'+brl(P.div)+'</div>'+dl(P.div,ref&&ref.div,true)+'</div>'
+      +'<div><div class="l">Sobra média por mês</div><div class="v money '+(G.n?cls(G.sobra):'')+'">'+(G.n?brl(G.sobra):'—')+'</div><div class="sub">'+(G.n&&G.me?pct(G.sobra/G.me*100,0)+' da renda':'preencha os gastos')+'</div></div>'
+      +'<div><div class="l">Reserva de emergência</div><div class="v">'+(R.meses!=null?fmt(R.meses,1)+' meses':'—')+'</div><div class="sub money">'+brl(R.v)+' disponíveis</div></div></div>'
+    +'<div class="pj-g"><div><div class="card dk"><div class="row" style="justify-content:space-between"><div class="h3">Próximos passos</div><span class="sub">'+(px.length?px.length+' ponto(s) de atenção':'')+'</span></div>'
+      +(px.length?px.slice(0,6).map(function(x){ return '<div class="lst" style="cursor:pointer;align-items:flex-start" data-px="'+x[3]+'"><span style="color:var(--or);margin-top:2px">'+ic(x[0],20)+'</span><span style="flex:1"><b style="font-weight:600">'+esc(x[1])+'</b><span class="sub" style="display:block;font-size:13.5px">'+esc(x[2])+'</span></span><span style="color:var(--mut)">'+ic('chev',16)+'</span></div>'; }).join('')
+        :'<div class="sub" style="padding:18px 0;font-size:15px">Tudo em dia por aqui. Volte no fim do mês para fechar e comparar.</div>')+'</div>'
+      +'<div class="card dk" style="margin-top:16px"><div class="row" style="justify-content:space-between"><div class="h3">Fechamentos</div><span class="sub">'+FE.length+' mês(es) registrado(s)</span></div>'
+      +(FE.length?'<div class="scroll-x" style="margin-top:8px"><table class="tbl"><tr><th>Mês</th><th class="r">Entrou</th><th class="r">Saiu</th><th class="r">Sobrou</th><th class="r">Patrimônio</th></tr>'+FE.slice(-6).reverse().map(function(f){ return '<tr><td>'+ymLbl(f.ym)+'</td><td class="r money">'+brl(f.e)+'</td><td class="r money">'+brl(f.s)+'</td><td class="r money '+cls(f.sobra)+'">'+brl(f.sobra)+'</td><td class="r money"><b>'+brl(f.pl)+'</b></td></tr>'; }).join('')+'</table></div>'
+        :'<p class="sub" style="margin-top:8px;font-size:14px">No fim de cada mês, toque em "Fechar o mês". O site guarda o retrato e passa a mostrar sua evolução.</p>')+'</div></div>'
+    +'<div><div class="card dk"><div class="row" style="justify-content:space-between"><div class="h3">Meus objetivos</div><button class="btn sm" data-go="projecao">'+ic('trend',16)+'Projeção</button></div>'
+      +(OB.objs.length?OB.objs.map(function(o){ var m=(+o.anos||1)*12, G2=+o.valor||0, v=fvReal(P.inv,+OB.aporte||0,base,m), ok=v>=G2, hoje=G2?clamp(P.inv/G2*100,0,100):0;
+          return '<div style="padding:14px 0;border-top:1px solid var(--line)"><div class="row" style="justify-content:space-between"><b style="font-weight:600">'+esc(o.n)+'</b><span class="pill '+(ok?'p-gr':'p-yl')+'">'+(ok?'no ritmo atual, chega':'no ritmo atual, não chega')+'</span></div><div class="sub money">'+brl(G2)+' em '+o.anos+' ano(s) · projetado: '+brl(v)+'</div>'
+            +'<div style="height:8px;border-radius:5px;background:rgba(var(--ink),.08);margin-top:10px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:'+clamp(G2?v/G2*100:0,0,100)+'%;background:'+(ok?'var(--gr)':'var(--or)')+';opacity:.35"></div><div style="position:absolute;left:0;top:0;bottom:0;width:'+hoje+'%;background:'+(ok?'var(--gr)':'var(--or)')+'"></div></div><div class="sub" style="margin-top:4px">hoje você tem '+pct(hoje,0)+' · barra clara = projeção no prazo</div></div>'; }).join('')
+        :'<div class="sub" style="padding:18px 0;font-size:15px">Nenhum objetivo definido. <a data-go="objetivo">Definir agora</a></div>')+'</div>'
+      +cardReserva()
+      +'<div class="card dk" style="margin-top:16px"><div class="h3">Mercado</div><p class="sub" style="margin-top:4px;font-size:14px">Notícias dos últimos dias e as manchetes ligadas aos seus ativos.</p><div class="row" style="margin-top:12px"><button class="btn sm" data-go="home">'+ic('tv',16)+'Notícias</button><button class="btn sm" id="rsMine">'+ic('pie',16)+'Notícias da minha carteira</button><button class="btn sm" data-go="graficos">'+ic('chart',16)+'Gráficos</button></div></div></div></div>';
+  $('#rsFech').onclick=function(){ if(!G.n && !confirm('O controle de gastos deste mês está vazio. Fechar mesmo assim, só com o patrimônio?')) return; fecharMes(); rsRender(); toast('Mês de '+MESES[new Date().getMonth()]+' fechado.'); };
+  $$('[data-px]',B).forEach(function(el){ el.onclick=function(){ if(el.dataset.px==='#fechar') $('#rsFech').click(); else go(el.dataset.px); }; });
+  $('#rsMine').onclick=function(){ NEWS_MINE=true; go('home'); newsGo(); };
+}
+
+/* ---------------- Plano para sair das dívidas ---------------- */
+var DV=S.div2||(S.div2={extra:null,met:'aval'});
+PAGES.dividas={ render:dvRender };
+function dvSim(list, extra, met){ var d=list.map(function(x){ return {n:x.n,s:+x.v||0,i:(+x.j||0)/100,pm:+x.pm||0,q:null,juros:0}; }).filter(function(x){ return x.s>0; });
+  var ord=function(a,b){ return met==='neve'?a.s-b.s:(b.i-a.i)||(a.s-b.s); }, tj=0, m=0, hist=[d.reduce(function(s,x){ return s+x.s; },0)];
+  while(d.some(function(x){ return x.s>0.005; }) && m<600){ m++; var pool=extra;
+    d.forEach(function(x){ if(x.s<=0) { pool+=x.pm; return; } var j=x.s*x.i; x.s+=j; x.juros+=j; tj+=j; var p=Math.min(x.pm,x.s); x.s-=p; pool+=x.pm-p; });
+    d.filter(function(x){ return x.s>0.005; }).sort(ord).forEach(function(x){ if(pool<=0) return; var p=Math.min(pool,x.s); x.s-=p; pool-=p; });
+    d.forEach(function(x){ if(x.s<=0.005&&x.q==null){ x.s=0; x.q=m; } }); hist.push(d.reduce(function(s,x){ return s+x.s; },0));
+    if(m>12 && hist[m]>=hist[m-12]) { m=601; break; } }
+  return {ok:m<=600, meses:m, juros:tj, d:d, hist:hist, ordem:d.slice().sort(function(a,b){ return (a.q||999)-(b.q||999); })}; }
+function dvRender(){
+  var L=PT.div, sob=sobraMedia(), extra=DV.extra!=null?DV.extra:Math.max(0,Math.round(sob||0)), B=$('#pg_dividas');
+  var head=pageHead('Financeiro / Dívidas','Plano para sair das dívidas','Liste o que você deve, com os juros e a parcela de cada dívida. O site mostra em que ordem atacar e em quanto tempo você fica livre.','<button class="btn or" id="dvAdd">'+ic('plus',18)+'Adicionar dívida</button>');
+  var rows=L.map(function(x,i){ return '<tr><td><input class="in" data-dn="'+i+'" value="'+esc(x.n)+'" style="height:38px;min-width:170px"></td><td class="r"><div class="inwrap" style="height:38px;width:150px;margin-left:auto"><b>R$</b><input data-dv="'+i+'" value="'+fmt(+x.v||0,0)+'" inputmode="numeric"></div></td><td class="r"><div class="inwrap" style="height:38px;width:120px;margin-left:auto"><input data-dj="'+i+'" value="'+(x.j!=null&&x.j!==''?fmt(+x.j,2):'')+'" inputmode="decimal" placeholder="0,00"><b>% a.m.</b></div></td><td class="r"><div class="inwrap" style="height:38px;width:140px;margin-left:auto"><b>R$</b><input data-dp="'+i+'" value="'+(x.pm?fmt(+x.pm,0):'')+'" inputmode="numeric"></div></td><td><button class="x" data-dx="'+i+'">'+ic('x',14)+'</button></td></tr>'; }).join('');
+  var valid=L.filter(function(x){ return (+x.v||0)>0; }), A=valid.length?dvSim(valid,extra,'aval'):null, N=valid.length?dvSim(valid,extra,'neve'):null, Z=valid.length?dvSim(valid,0,'aval'):null, cur=DV.met==='neve'?N:A;
+  var totPm=valid.reduce(function(s,x){ return s+(+x.pm||0); },0), tot=valid.reduce(function(s,x){ return s+(+x.v||0); },0), renda=rendaMes();
+  var tm=function(R){ return R.ok?(R.meses<12?R.meses+' meses':fmt(R.meses/12,1)+' anos'):'não quita'; };
+  B.innerHTML=head+explain('Como funciona um plano de quitação',[['A ideia','Você continua pagando a parcela de todas as dívidas e concentra todo o dinheiro extra em uma só. Quando ela acaba, a parcela dela vai para a próxima. O valor que você paga por mês não muda, mas as dívidas somem uma a uma.'],['Avalanche','Ataca primeiro a dívida com os juros mais altos. É o caminho que paga menos juros no total.'],['Bola de neve','Ataca primeiro a menor dívida. Paga um pouco mais de juros, mas dá resultado rápido, o que ajuda muita gente a não desistir.'],['Antes de começar','Vale tentar renegociar as dívidas mais caras ou trocá-las por uma mais barata (portabilidade, consignado). Juros menores encurtam qualquer plano.']])
+    +'<div class="card dk" style="padding:10px 14px"><div class="scroll-x"><table class="tbl"><tr><th>Dívida</th><th class="r">Saldo devedor hoje</th><th class="r">Juros</th><th class="r">Parcela mensal</th><th></th></tr>'+(rows||'<tr><td colspan="5"><div class="empty" style="margin:10px 0">Nenhuma dívida cadastrada. Se você não deve nada, pode pular esta tela.</div></td></tr>')+'</table></div></div>'
+    +(cur?'<div class="res" style="margin:22px 0 0"><div><div class="l">Total devido</div><div class="v money" style="color:var(--rd)">'+brl(tot)+'</div></div><div><div class="l">Parcelas por mês</div><div class="v money">'+brl(totPm)+'</div><div class="sub">'+(renda?pct(totPm/renda*100,0)+' da sua renda':'')+'</div></div><div class="hi"><div class="l">Livre das dívidas em</div><div class="v">'+tm(cur)+'</div><div class="sub">'+(cur.ok?'por volta de '+(function(){ var d=new Date(); d.setMonth(d.getMonth()+cur.meses); return MESES[d.getMonth()]+'/'+d.getFullYear(); })():'as parcelas não cobrem os juros')+'</div></div><div><div class="l">Juros até quitar</div><div class="v money">'+(cur.ok?brl(cur.juros):'—')+'</div></div></div>'
+      +'<div class="pj-g" style="margin-top:20px"><div><div class="card dk"><div class="h3">Seu plano</div><div style="margin-top:12px">'+fld('Quanto a mais você consegue pagar por mês',inp('dvEx',fmt(extra,0),'R$'),sob!=null?'Sua sobra média no controle de gastos é '+brl(Math.max(0,sob))+'.':'Além das parcelas que você já paga.')+'</div>'
+        +'<div class="lbl" style="margin-top:16px">Método</div><div style="margin-top:8px">'+segH('dvMet',[['aval','Avalanche · juros mais altos primeiro'],['neve','Bola de neve · menor dívida primeiro']],DV.met)+'</div>'
+        +'<table class="tbl" style="margin-top:16px"><tr><th></th><th class="r">Tempo</th><th class="r">Juros pagos</th></tr><tr><td>Só as parcelas atuais</td><td class="r">'+tm(Z)+'</td><td class="r money">'+(Z.ok?brl(Z.juros):'—')+'</td></tr><tr><td>Avalanche'+(DV.met==='aval'?' <span class="pill p-or">escolhido</span>':'')+'</td><td class="r"><b>'+tm(A)+'</b></td><td class="r money"><b>'+(A.ok?brl(A.juros):'—')+'</b></td></tr><tr><td>Bola de neve'+(DV.met==='neve'?' <span class="pill p-or">escolhido</span>':'')+'</td><td class="r"><b>'+tm(N)+'</b></td><td class="r money"><b>'+(N.ok?brl(N.juros):'—')+'</b></td></tr></table>'
+        +(cur.ok&&Z.ok&&extra>0?'<div class="note">Pagando '+brl(extra)+' a mais por mês, você termina <b>'+(Z.meses-cur.meses)+' meses antes</b> e economiza <b class="money">'+brl(Z.juros-cur.juros)+'</b> em juros.</div>':'')
+        +(!cur.ok?'<div class="note" style="border-color:var(--rd)">Com esses valores a dívida não diminui: os juros do mês são maiores do que o que está sendo pago. Aumentar o valor mensal ou renegociar a taxa são os dois caminhos.</div>':'')+'</div></div>'
+      +'<div><div class="card dk"><div class="h3">Ordem de quitação</div>'+(cur.ok?cur.ordem.map(function(x,i){ return '<div class="lst"><span class="pill p-or" style="width:28px;justify-content:center">'+(i+1)+'</span><span style="flex:1"><b style="font-weight:600">'+esc(x.n)+'</b><span class="sub" style="display:block">'+pct(x.i*100,2)+' a.m. · juros até o fim: <span class="money">'+brl(x.juros)+'</span></span></span><span style="text-align:right"><b>'+(x.q<12?x.q+' meses':fmt(x.q/12,1)+' anos')+'</b></span></div>'; }).join(''):'<div class="sub" style="padding:14px 0">Ajuste os valores para ver a ordem.</div>')+'</div>'
+        +'<div class="card dk" style="margin-top:16px"><div class="h3">Saldo devedor mês a mês</div><div id="dvCh" style="margin-top:10px"></div></div></div></div>':'')
+    +'<p class="disc">Simulação com juros e parcelas constantes, informados por você. Não considera multas, renegociações nem novas dívidas. As dívidas daqui são as mesmas da tela Patrimônio. Conteúdo educativo.</p>';
+  $('#dvAdd').onclick=function(){ PT.div.push({n:'Nova dívida',t:'Empréstimo',v:0,j:'',pm:0}); save(); dvRender(); };
+  var st=function(attr,f){ $$('['+attr+']',B).forEach(function(el){ el.onchange=function(){ f(L[+el.getAttribute(attr)],el); save(); dvRender(); }; }); }, nn=function(el){ var v=num(el.value); return isFinite(v)?Math.max(0,v):0; };
+  st('data-dn',function(x,el){ x.n=el.value.trim()||'Dívida'; }); st('data-dv',function(x,el){ x.v=nn(el); }); st('data-dj',function(x,el){ x.j=el.value.trim()===''?'':nn(el); }); st('data-dp',function(x,el){ x.pm=nn(el); });
+  $$('[data-dx]',B).forEach(function(el){ el.onclick=function(){ L.splice(+el.dataset.dx,1); save(); dvRender(); }; });
+  if(cur){ $('#dvEx').onchange=function(){ DV.extra=nn(this); save(); dvRender(); }; segOn('dvMet',function(v){ DV.met=v; save(); dvRender(); });
+    if(cur.ok){ var xs=cur.hist.map(function(_,i){ return i; }); svgChart($('#dvCh'),[{x:xs,y:cur.hist,color:'#b8892b',area:true,name:'Com o plano',width:2.4}].concat(Z.ok?[{x:Z.hist.map(function(_,i){ return i; }),y:Z.hist,color:'#8a8f9f',dash:'5 6',name:'Só as parcelas'}]:[]),{h:260,y0:0,yfmt:brlK,xfmt:function(v){ return 'Mês '+Math.round(v); }}); } else $('#dvCh').innerHTML=''; }
+}
+
+/* ---------------- Alugar ou comprar imóvel ---------------- */
+var IM=S.imovel||(S.imovel={valor:600000,entrada:120000,tx:11,n:360,sis:'sac',custos:5,manut:1,cond:0,aluguel:2800,reaj:null,valoriz:null,rend:null,anos:15});
+PAGES.imovel={ render:imRender };
+function imRender(){
+  var ip=S.prefs.ipca, reaj=IM.reaj!=null?IM.reaj:ip, val=IM.valoriz!=null?IM.valoriz:ip, rend=IM.rend!=null?IM.rend:Math.round(prBaseRate()*100)/100, H=clamp(Math.round(+IM.anos||10),1,40);
+  var pv=Math.max(0,(+IM.valor||0)-(+IM.entrada||0)), A=amort({pv:pv,i:aa2am(+IM.tx||0)/100,n:Math.max(1,Math.round(+IM.n||1)),sis:IM.sis||'sac'}), custos0=(+IM.valor||0)*(+IM.custos||0)/100;
+  var rm=aa2am(rend)/100, inv=(+IM.entrada||0)+custos0, alug=+IM.aluguel||0, imv=+IM.valor||0, xs=[0], yc=[(+IM.valor||0)-pv], ya=[inv], gastoC=(+IM.entrada||0)+custos0, gastoA=0, saldo=pv;
+  for(var m=1;m<=H*12;m++){ var r=A.rows[m-1], parc=r?r.p:0; saldo=r?r.s:0; var dono=parc+imv*(+IM.manut||0)/100/12+(+IM.cond||0); imv*=Math.pow(1+val/100,1/12);
+    if(m>1&&(m-1)%12===0) alug*=1+reaj/100; inv=inv*(1+rm)+(dono-alug); gastoC+=dono; gastoA+=alug;
+    if(m%12===0){ xs.push(m/12); yc.push(imv-saldo); ya.push(inv); } }
+  var pc=yc[yc.length-1], pa=ya[ya.length-1], dif=pc-pa, emp=null; for(var k=1;k<xs.length;k++){ if(yc[k]>=ya[k]){ emp=xs[k]; break; } }
+  $('#pg_imovel').innerHTML=pageHead('Meus objetivos / Moradia','Alugar ou comprar imóvel','Compare os dois caminhos com os seus números: quanto você teria de patrimônio em cada um ao final do período.')
+    +explain('Como a comparação é feita',[['Comprar','Você paga a entrada e os custos da compra, depois a parcela do financiamento e a manutenção. No fim, seu patrimônio é o valor do imóvel menos o que ainda deve.'],['Alugar','Você investe o dinheiro que daria de entrada e, todo mês, investe também a diferença entre o custo de ser dono e o aluguel. No fim, seu patrimônio é o que acumulou investido.'],['O que a conta não mede','Estabilidade, liberdade para mudar de cidade, reformar do seu jeito, segurança da família. Para muita gente isso pesa mais do que a diferença financeira.'],['Disciplina','O caminho do aluguel só funciona na conta se a diferença for mesmo investida todo mês. Se ela virar consumo, comprar acaba sendo uma poupança forçada.']])
+    +'<div class="cmp2"><div class="card dk" style="border-top:4px solid var(--bl)"><div class="h3" style="color:var(--bl)">Comprar</div><div class="grid g2" style="gap:12px;margin-top:12px">'+fld('Valor do imóvel',inp('imV',fmt(+IM.valor||0,0),'R$'))+fld('Entrada',inp('imE',fmt(+IM.entrada||0,0),'R$'))+fld('Juros do financiamento',inp('imT',fmt(+IM.tx||0,2),'','% a.a.'))+fld('Prazo',inp('imN',+IM.n||0,'','meses'))
+        +fld('Custos da compra (ITBI, cartório)',inp('imC',fmt(+IM.custos||0,2),'','% do imóvel'))+fld('Manutenção e IPTU por ano',inp('imM',fmt(+IM.manut||0,2),'','% do imóvel'))+fld('Condomínio a mais que no aluguel',inp('imCd',fmt(+IM.cond||0,0),'R$'),'Deixe zero se o condomínio seria o mesmo.')+fld('Valorização do imóvel',inp('imVz',fmt(val,2),'','% a.a.'),'Padrão: igual à inflação.')+'</div>'
+        +'<div style="margin-top:12px">'+segH('imS',[['sac','SAC'],['price','Price']],IM.sis||'sac')+'</div>'
+        +'<div class="res"><div><div class="l">Primeira parcela</div><div class="v money">'+brl(A.p1)+'</div></div><div><div class="l">Desembolso inicial</div><div class="v money">'+brl((+IM.entrada||0)+custos0)+'</div></div></div></div>'
+      +'<div class="card dk" style="border-top:4px solid var(--or)"><div class="h3" style="color:var(--or2)">Alugar e investir</div><div class="grid g2" style="gap:12px;margin-top:12px">'+fld('Aluguel de um imóvel equivalente',inp('imA',fmt(+IM.aluguel||0,0),'R$'))+fld('Reajuste anual do aluguel',inp('imR',fmt(reaj,2),'','% a.a.'),'Padrão: inflação.')
+        +fld('Rendimento líquido dos investimentos',inp('imRd',fmt(rend,2),'','% a.a.'),'Padrão: a rentabilidade da sua projeção.')+fld('Comparar ao longo de',inp('imH',H,'','anos'))+'</div>'
+        +'<div class="res"><div><div class="l">Aluguel sobre o valor do imóvel</div><div class="v">'+pct(IM.valor?(+IM.aluguel||0)*12/IM.valor*100:0,2)+' a.a.</div></div><div><div class="l">Investimento inicial</div><div class="v money">'+brl((+IM.entrada||0)+custos0)+'</div></div></div></div></div>'
+    +'<div class="card dk" style="margin-top:20px"><div class="row" style="justify-content:space-between"><div><div class="kick">Resultado em '+H+' anos</div><div class="h3" style="margin-top:6px">Patrimônio em cada caminho</div></div></div>'
+      +'<div class="res"><div class="'+(dif>=0?'hi':'')+'"><div class="l">Comprando</div><div class="v money">'+brl(pc)+'</div><div class="sub">imóvel menos saldo devedor</div></div><div class="'+(dif<0?'hi':'')+'"><div class="l">Alugando e investindo</div><div class="v money">'+brl(pa)+'</div><div class="sub">saldo investido</div></div><div><div class="l">Diferença</div><div class="v money">'+brl(Math.abs(dif))+'</div><div class="sub">a favor de '+(dif>=0?'comprar':'alugar')+'</div></div><div><div class="l">Comprar passa a valer mais</div><div class="v">'+(emp!=null?(emp<=1?'desde o início':'a partir do ano '+emp):'não neste prazo')+'</div></div></div>'
+      +'<div id="imCh" style="margin-top:16px"></div>'
+      +'<div class="note">Com esses números, em '+H+' anos <b>'+(dif>=0?'comprar':'alugar e investir a diferença')+'</b> deixaria você com cerca de <b class="money">'+brl(Math.abs(dif))+'</b> a mais.'+(pa<0?' No caminho do aluguel o saldo ficou negativo: o aluguel custa mais do que ser dono, e a entrada investida não cobre a diferença.':'')+' O resultado é muito sensível à valorização do imóvel, ao rendimento dos investimentos e ao reajuste do aluguel: vale testar cenários diferentes antes de concluir.</div></div>'
+    +'<p class="disc">Simulação em valores nominais, com taxas constantes. Não considera imposto sobre ganho na venda do imóvel, vacância, reformas, seguros do financiamento nem mudanças de regra. Conteúdo educativo, não é recomendação de compra, venda ou investimento.</p>';
+  svgChart($('#imCh'),[{x:xs,y:yc,color:'#3f63d9',name:'Comprando',width:2.6},{x:xs,y:ya,color:'#b8892b',name:'Alugando e investindo',width:2.6}],{h:320,yfmt:brlK,xfmt:function(v){ return Math.round(v)?'Ano '+Math.round(v):'Hoje'; }});
+  var map={imV:'valor',imE:'entrada',imT:'tx',imN:'n',imC:'custos',imM:'manut',imCd:'cond',imVz:'valoriz',imA:'aluguel',imR:'reaj',imRd:'rend',imH:'anos'};
+  Object.keys(map).forEach(function(id){ $('#'+id).onchange=function(){ var v=num(this.value); IM[map[id]]=isFinite(v)?Math.max(0,v):0; save(); imRender(); }; });
+  segOn('imS',function(v){ IM.sis=v; save(); imRender(); });
+}
+
+/* ---------------- Viver de renda (aposentadoria) ---------------- */
+var AP=S.apos||(S.apos={idade:35,alvo:60,renda:10000,outras:0,ate:90,perp:false,real:null});
+PAGES.aposentadoria={ render:apRender };
+function apRender(){
+  var P=ctTot(), A=+OB.aporte||0, real=AP.real!=null?AP.real:Math.round(realOf(prBaseRate())*1e4)/100, r=real/100, rm=Math.pow(1+r,1/12)-1, anos=Math.max(1,(+AP.alvo||60)-(+AP.idade||30)), N=anos*12, falta=Math.max(0,(+AP.renda||0)-(+AP.outras||0));
+  var nu=Math.max(1,((+AP.ate||90)-(+AP.alvo||60))*12), nec=AP.perp?(rm>0?falta/rm:Infinity):(Math.abs(rm)<1e-9?falta*nu:falta*(1-Math.pow(1+rm,-nu))/rm);
+  var f=Math.pow(1+rm,N), proj=Math.abs(rm)<1e-9?P+A*N:P*f+A*(f-1)/rm, ok=proj>=nec, apN=isFinite(nec)?Math.max(0,Math.abs(rm)<1e-9?(nec-P)/N:(nec-P*f)*rm/(f-1)):null;
+  var rendaProj=AP.perp?proj*rm:(Math.abs(rm)<1e-9?proj/nu:proj*rm/(1-Math.pow(1+rm,-nu)));
+  var xs=[], ys=[], v=P; for(var m=0;m<=N+nu&&m<=1200;m++){ if(m%12===0){ xs.push(+AP.idade+m/12); ys.push(Math.max(0,v)); } if(m<N) v=v*(1+rm)+A; else v=v*(1+rm)-falta; }
+  var fim=null; for(var k=0;k<ys.length;k++){ if(xs[k]>+AP.alvo && ys[k]<=0){ fim=xs[k]; break; } }
+  $('#pg_aposentadoria').innerHTML=pageHead('Meus objetivos / Futuro','Viver de renda','Quanto você precisa juntar para ter a renda que deseja, e se o seu ritmo atual chega lá. Tudo em valores de hoje.')
+    +explain('Como pensar nesse número',[['Renda desejada','Quanto você gostaria de receber por mês, no poder de compra de hoje. Costuma ser parecido com o seu custo de vida atual.'],['Outras rendas','O que você espera receber sem depender dos investimentos: aposentadoria do INSS, aluguéis, pensão. O simulador oficial do INSS (Meu INSS) dá uma estimativa.'],['Usar o patrimônio ou só os rendimentos','Viver só dos rendimentos preserva o patrimônio para sempre, mas exige juntar mais. Usar o patrimônio aos poucos, até uma idade, exige menos.'],['Juro real','É quanto os investimentos rendem acima da inflação. Pequenas diferenças mudam muito o resultado em prazos longos.']])
+    +'<div class="pj-g"><div class="card dk"><div class="grid g2" style="gap:12px">'+fld('Idade hoje',inp('apI',+AP.idade||0,'','anos'))+fld('Quero viver de renda aos',inp('apA',+AP.alvo||0,'','anos'))+fld('Renda mensal desejada',inp('apR',fmt(+AP.renda||0,0),'R$'))+fld('Outras rendas (INSS, aluguéis)',inp('apO',fmt(+AP.outras||0,0),'R$'))
+        +fld('Rendimento acima da inflação',inp('apJ',fmt(real,2),'','% a.a.'),'Padrão: o da sua projeção.')+(AP.perp?'':fld('Renda até os',inp('apT',+AP.ate||90,'','anos')))+'</div>'
+      +'<button class="row" id="apP" style="gap:12px;margin-top:16px"><span class="tog'+(AP.perp?' on':'')+'"></span><span>Viver só dos rendimentos, sem consumir o patrimônio</span></button>'
+      +'<div class="res"><div><div class="l">Tenho hoje</div><div class="v money">'+brl(P)+'</div></div><div><div class="l">Guardo por mês</div><div class="v money">'+brl(A)+'</div></div></div><p class="sub" style="margin-top:8px">Valores de <a data-go="carteira">Minha carteira atual</a> e <a data-go="objetivo">Objetivo para alcançar</a>.</p></div>'
+    +'<div><div class="card dk" style="border-left:4px solid '+(ok?'var(--gr)':'var(--yl)')+'"><div class="row" style="justify-content:space-between"><div class="kick">Aos '+AP.alvo+' anos</div><span class="pill '+(ok?'p-gr':'p-yl')+'" style="height:30px;font-size:13px">'+(ok?'No ritmo atual, você chega':'No ritmo atual, não chega')+'</span></div>'
+      +'<div class="res"><div class="hi"><div class="l">Preciso ter</div><div class="v money">'+(isFinite(nec)?brl(nec):'—')+'</div><div class="sub">para '+brl(falta)+' por mês dos investimentos</div></div><div><div class="l">Projetado</div><div class="v money">'+brl(proj)+'</div><div class="sub">'+(isFinite(nec)&&nec>0?pct(proj/nec*100,0)+' do necessário':'')+'</div></div><div><div class="l">Renda que o projetado sustenta</div><div class="v money">'+brl(rendaProj+(+AP.outras||0))+'</div><div class="sub">por mês, já com as outras rendas</div></div></div>'
+      +(ok?'':'<div class="note"><b>Para fechar a conta</b>, mantendo o resto igual: guardar <b class="money">'+(apN!=null?brl(apN):'—')+'</b> por mês em vez de '+brl(A)+', ou adiar a data, ou aceitar uma renda menor.</div>')
+      +'<div class="row" style="margin-top:14px"><button class="btn sm or" id="apObj">'+ic('target',16)+'Criar objetivo com esse valor</button></div></div>'
+      +'<div class="card dk" style="margin-top:16px"><div class="row" style="justify-content:space-between"><div class="h3">Patrimônio ao longo da vida</div><span class="sub">'+(AP.perp?'patrimônio preservado':(fim?'o dinheiro acaba aos '+Math.round(fim)+' anos':'dura até os '+AP.ate+' anos ou mais'))+'</span></div><div id="apCh" style="margin-top:12px"></div></div></div></div>'
+    +'<p class="disc">Projeção em valores de hoje, com rendimento real e aportes constantes. Não considera impostos sobre resgates, mudanças nas regras do INSS nem oscilações do mercado. Conteúdo educativo, não é recomendação de investimento nem de plano de previdência.</p>';
+  svgChart($('#apCh'),[{x:xs,y:ys,color:'#b8892b',area:true,name:'Patrimônio',width:2.6}],{h:300,y0:0,yfmt:brlK,xfmt:function(v){ return Math.round(v)+' anos'; },refs:isFinite(nec)?[{y:nec,label:'necessário',color:'#12996b'}]:[],marks:[{x:+AP.alvo,y:proj,color:'#3f63d9',label:'aos '+AP.alvo}]});
+  var map={apI:'idade',apA:'alvo',apR:'renda',apO:'outras',apJ:'real',apT:'ate'}; Object.keys(map).forEach(function(id){ var el=$('#'+id); if(el) el.onchange=function(){ var v=num(this.value); AP[map[id]]=isFinite(v)?Math.max(0,v):0; if(AP.alvo<=AP.idade) AP.alvo=AP.idade+1; if(AP.ate<=AP.alvo) AP.ate=AP.alvo+1; save(); apRender(); }; });
+  $('#apP').onclick=function(){ AP.perp=!AP.perp; save(); apRender(); };
+  $('#apObj').onclick=function(){ if(!isFinite(nec)||nec<=0){ toast('Ajuste os valores primeiro.'); return; } OB.objs=OB.objs.filter(function(o){ return o.n!=='Viver de renda'; }); OB.objs.push({id:uid(),n:'Viver de renda',valor:Math.round(nec),anos:clamp(anos,1,60)}); save(); go('projecao'); toast('Objetivo "Viver de renda" criado.'); };
+}
+
 /* ---- p_proj.js ---- */
 /* =====================================================================
    Projeções e comparações
@@ -1536,12 +1737,12 @@ function pfRender(){
 }
 /* exemplo fictício, só para conhecer as telas */
 function demoData(){
-  CT.items=[{n:'CDB liquidez diária',tk:'',cl:'pos',v:40000,idx:'cdi',tx:100,isento:0},{n:'LCI',tk:'',cl:'pos',v:30000,idx:'cdi',tx:90,isento:1},{n:'Tesouro IPCA+ 2035',tk:'',cl:'ipca',v:35000,idx:'ipca',tx:6.5,isento:0},{n:'Petrobras',tk:'PETR4',cl:'rv',v:12000,idx:'',tx:'',isento:0},{n:'ETF Ibovespa',tk:'BOVA11',cl:'rv',v:15000,idx:'',tx:'',isento:0},{n:'Fundo imobiliário',tk:'MXRF11',cl:'fii',v:10000,idx:'',tx:'',isento:1},{n:'ETF S&P 500',tk:'IVVB11',cl:'int',v:8000,idx:'',tx:'',isento:0}].map(function(x){ x.id=uid(); return x; });
+  CT.items=[{n:'CDB liquidez diária',tk:'',cl:'pos',v:40000,idx:'cdi',tx:100,isento:0,liq:1,fgc:1,inst:'Banco Exemplo A'},{n:'LCI',tk:'',cl:'pos',v:30000,idx:'cdi',tx:90,isento:1,fgc:1,inst:'Banco Exemplo B',venc:iso(new Date(Date.now()+45*864e5))},{n:'Tesouro IPCA+ 2035',tk:'',cl:'ipca',v:35000,idx:'ipca',tx:6.5,isento:0},{n:'Petrobras',tk:'PETR4',cl:'rv',v:12000,idx:'',tx:'',isento:0},{n:'ETF Ibovespa',tk:'BOVA11',cl:'rv',v:15000,idx:'',tx:'',isento:0},{n:'Fundo imobiliário',tk:'MXRF11',cl:'fii',v:10000,idx:'',tx:'',isento:1},{n:'ETF S&P 500',tk:'IVVB11',cl:'int',v:8000,idx:'',tx:'',isento:0}].map(function(x){ x.id=uid(); return x; });
   OB.objs=[{id:uid(),n:'Reserva de emergência',valor:60000,anos:1},{id:uid(),n:'Entrada do apartamento',valor:300000,anos:6}]; OB.aporte=2500;
   var y=GA.ano, set=function(n,vals){ var r=GA.rows.filter(function(x){ return x.n===n; })[0]; if(r) r.v[y]=vals; }, rep=function(v){ var a=[]; for(var i=0;i<10;i++) a.push(v); return a; };
   set('Salário líquido',rep(9500)); set('Bônus',[0,0,6000]); set('Moradia (aluguel ou prestação)',rep(2400)); set('Condomínio e IPTU',rep(650)); set('Água, luz, gás e internet',rep(480)); set('Plano de saúde',rep(520)); set('Assinaturas',rep(120));
   set('Mercado',[1300,1250,1400,1280,1350,1420,1300,1380,1310,1290]); set('Restaurantes e delivery',[420,380,510,460,400,530,470,440,490,450]); set('Transporte e combustível',rep(520)); set('Lazer',[300,250,600,280,320,350,900,300,280,310]);
-  PT.bens=[{n:'Carro',t:'Veículo',v:65000}]; PT.div=[{n:'Financiamento do carro',t:'Financiamento de veículo',v:22000}];
+  PT.bens=[{n:'Carro',t:'Veículo',v:65000}]; PT.div=[{n:'Financiamento do carro',t:'Financiamento de veículo',v:22000,j:1.6,pm:980},{n:'Cartão de crédito parcelado',t:'Cartão de crédito',v:4800,j:7.5,pm:520}];
   S.cart.items=CT.items;
 }
 
@@ -1553,7 +1754,7 @@ function demoData(){
   applyTheme(); buildNav(); paintIcons(document); applyHide(); applyProfile();
   try{ if(sessionStorage.getItem('hubLocked')==='1' && S.prefs.pin){ $('#lock').classList.add('on'); } }catch(e){}
   addEventListener('hashchange',function(){ var p=location.hash.slice(1); if(p!==CUR) go(p,true); });
-  go(location.hash.slice(1)||'home',true);
+  go(location.hash.slice(1)||'resumo',true);
   loadTop(); setInterval(function(){ if(!document.hidden) loadTop(); }, 5*60*1000);
 })();
 
